@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AskHere - Share & Grow Knowledge</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Connects to Firebase -->
+    <script src="config.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; padding-top: 70px; }
+        .question-card { border-left: 4px solid #0d6efd; transition: all 0.3s ease; }
+        .question-card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold fs-3" href="index.html"><i class="fas fa-lightbulb text-primary"></i> AskHere</a>
+            <div class="d-flex align-items-center ms-auto gap-3">
+                <a class="nav-link text-white fw-semibold" href="chat.html"><i class="fas fa-globe text-primary"></i> Global Chat</a>
+                <a class="btn btn-primary text-white fw-bold px-4 rounded-pill" id="navLoginBtn" href="login.html">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                
+                <div class="text-center mb-5">
+                    <h2 class="fw-bold mb-3">Ask. Answer. Discover.</h2>
+                    <button class="btn btn-primary btn-lg fw-bold rounded-pill px-5 shadow-lg" data-bs-toggle="modal" data-bs-target="#askModal">Ask a Question</button>
+                </div>
+
+                <!-- LIVE FEED CONTAINER -->
+                <div id="feed-container">
+                    <p class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Loading live global feed...</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Ask Question Modal -->
+    <div class="modal fade" id="askModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Ask the World</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="text" id="newQuestionTitle" class="form-control mb-3" placeholder="What is your question? (e.g. How does...)">
+                    <textarea id="newQuestionDesc" class="form-control mb-3" rows="3" placeholder="Provide context..."></textarea>
+                    <button type="button" class="btn btn-primary w-100 rounded-pill fw-bold" onclick="postQuestion()">Post Globally</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Wait for Firebase to load from config.js
+        setTimeout(() => {
+            // Listen to all questions live
+            db.collection("questions").orderBy("createdAt", "desc").onSnapshot(snapshot => {
+                const feed = document.getElementById('feed-container');
+                feed.innerHTML = ''; 
+                
+                snapshot.forEach(doc => {
+                    const q = doc.data();
+                    feed.innerHTML += `
+                        <div class="card question-card mb-4 p-4 shadow-sm border-0">
+                            <small class="text-muted mb-2"><i class="fas fa-user-circle text-primary"></i> ${q.authorEmail || 'Anonymous'}</small>
+                            <h4 class="fw-bold">${q.title}</h4>
+                            <p class="text-secondary mb-3">${q.desc}</p>
+                            <div class="d-flex justify-content-between">
+                                <a href="question.html?id=${doc.id}" class="btn btn-outline-primary btn-sm rounded-pill fw-bold px-4">Read Answers & Reply</a>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+        }, 1000);
+
+        function postQuestion() {
+            if (!auth.currentUser) {
+                alert("You must be logged in to post a question!");
+                window.location.href = "login.html";
+                return;
+            }
+
+            const title = document.getElementById('newQuestionTitle').value;
+            const desc = document.getElementById('newQuestionDesc').value;
+            
+            if(!title) return;
+
+            // Save to Firebase
+            db.collection("questions").add({
+                title: title,
+                desc: desc,
+                authorEmail: auth.currentUser.email,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                document.getElementById('newQuestionTitle').value = '';
+                document.getElementById('newQuestionDesc').value = '';
+                bootstrap.Modal.getInstance(document.getElementById('askModal')).hide();
+            }).catch(err => alert(err.message));
+        }
+    </script>
+</body>
+</html>

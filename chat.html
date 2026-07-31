@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Chat - AskHere</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Connects to Firebase -->
+    <script src="config.js"></script>
+    <style>
+        body { background-color: #f4f7f6; padding-top: 60px; height: 100vh; overflow: hidden; display: flex; flex-direction: column;}
+        .chat-container { flex-grow: 1; display: flex; overflow: hidden; background: white; margin: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .chat-area { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
+        .messages { flex-grow: 1; padding: 20px; overflow-y: auto; background-color: #f8f9fa; }
+        .message { margin-bottom: 20px; display: flex; align-items: flex-start; }
+        .message-content { background: white; padding: 12px 18px; border-radius: 15px; border: 1px solid #eee; max-width: 70%; }
+        .message.self { flex-direction: row-reverse; }
+        .message.self .message-content { background: #0d6efd; color: white; border: none; }
+        .chat-input-area { padding: 20px; background: white; border-top: 1px solid #eee; display: flex; align-items: center; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow-sm">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand fw-bold fs-3" href="index.html"><i class="fas fa-arrow-left me-2"></i> Back to Feed</a>
+            <div class="d-flex align-items-center">
+                <span class="text-white fw-bold"><i class="fas fa-globe text-primary animate__animated animate__pulse animate__infinite"></i> Live Global Room</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="chat-container">
+        <!-- Chat Area -->
+        <div class="chat-area">
+            
+            <div class="bg-white p-3 border-bottom shadow-sm d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-dark">General Lounge</h5>
+                <span class="badge bg-success">Live</span>
+            </div>
+
+            <!-- LIVE MESSAGES APPEAR HERE -->
+            <div class="messages" id="chat-messages">
+                <div class="text-center mb-4"><span class="badge bg-secondary">Loading chat history...</span></div>
+            </div>
+
+            <div class="chat-input-area">
+                <input type="text" id="chatInput" class="form-control form-control-lg rounded-pill border-0 bg-light px-4" placeholder="Type a message or use emojis 🚀🔥..." onkeypress="if(event.key === 'Enter') sendMessage()">
+                <button class="btn btn-primary rounded-circle ms-2 px-3" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        setTimeout(() => {
+            // Read chat live
+            db.collection("global_chat").orderBy("timestamp", "asc").onSnapshot(snapshot => {
+                const chatBox = document.getElementById('chat-messages');
+                chatBox.innerHTML = '';
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const isMe = auth.currentUser && auth.currentUser.email === data.email;
+                    
+                    chatBox.innerHTML += `
+                        <div class="message ${isMe ? 'self' : ''}">
+                            <div class="message-content">
+                                <div class="fw-bold small mb-1 ${isMe ? 'text-light' : 'text-primary'}">${data.email || 'Anonymous'}</div>
+                                ${data.text}
+                            </div>
+                        </div>
+                    `;
+                });
+                // Auto scroll to bottom
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+        }, 1000);
+
+        function sendMessage() {
+            if (!auth.currentUser) {
+                alert("You must login to chat!");
+                window.location.href = "login.html";
+                return;
+            }
+
+            const input = document.getElementById('chatInput');
+            const msg = input.value.trim();
+            if(!msg) return;
+
+            // Write to Firebase
+            db.collection("global_chat").add({
+                text: msg,
+                email: auth.currentUser.email,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                input.value = ""; // Clear input after sending
+            });
+        }
+    </script>
+</body>
+</html>
