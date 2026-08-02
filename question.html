@@ -8,29 +8,33 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="config.js"></script>
+    <script>
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+        function toggleTheme() {
+            const html = document.documentElement;
+            const next = html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-bs-theme', next); localStorage.setItem('theme', next);
+        }
+    </script>
     <style>
-        body { background-color: #f0f2f5; padding-top: 80px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.1);}
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bs-body-bg); padding-top: 80px; }
+        .avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--bs-primary); }
     </style>
 </head>
 <body>
 
-    <!-- Unified Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow">
         <div class="container-fluid px-4">
-            <a class="navbar-brand fw-bold fs-4" href="index.html"><i class="fas fa-brain text-info"></i> AskHere</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            <a class="navbar-brand fw-bold fs-4" href="index.html"><i class="fas fa-arrow-left text-info me-2"></i> Feed</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav mx-auto gap-2">
-                    <li class="nav-item"><a class="nav-link fw-semibold" href="index.html"><i class="fas fa-home"></i> Feed</a></li>
                     <li class="nav-item"><a class="nav-link fw-semibold" href="chat.html"><i class="fas fa-globe text-info"></i> Global Chat</a></li>
-                    <li class="nav-item"><a class="nav-link fw-semibold" href="confessions.html"><i class="fas fa-user-secret text-secondary"></i> Confessions</a></li>
                     <li class="nav-item"><a class="nav-link fw-semibold" href="private-chat.html"><i class="fas fa-envelope text-warning"></i> Inbox</a></li>
-                    <li class="nav-item"><a class="nav-link fw-semibold" href="about.html"><i class="fas fa-info-circle text-light"></i> Guide</a></li>
                 </ul>
-                <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-outline-light rounded-circle" onclick="toggleTheme()"><i class="fas fa-adjust"></i></button>
                     <a class="btn btn-primary text-white fw-bold px-4 rounded-pill shadow-sm" id="navLoginBtn" href="login.html">Login</a>
                 </div>
             </div>
@@ -41,23 +45,22 @@
         <div class="row justify-content-center">
             <div class="col-lg-8">
                 
-                <div id="questionData" class="mb-4 bg-white p-5 rounded-4 shadow-sm border-top border-5 border-primary">
-                    <div class="text-center text-muted"><i class="fas fa-circle-notch fa-spin fa-3x mb-3"></i><p>Loading question data...</p></div>
+                <div id="questionData" class="mb-4 p-5 rounded-4 shadow-sm border border-primary">
+                    <div class="text-center text-muted"><i class="fas fa-spinner fa-spin fa-2x"></i></div>
                 </div>
 
-                <div class="card mb-5 p-4 bg-light shadow-sm border-0 rounded-4">
+                <div class="card mb-5 p-4 shadow-sm border-0 rounded-4">
                     <h5 class="fw-bold mb-3"><i class="fas fa-pen-nib text-primary me-2"></i> Contribute your knowledge</h5>
-                    <textarea id="answerInput" class="form-control border-0 mb-3 shadow-sm" rows="5" placeholder="Write a detailed answer here... (Press Shift+Enter for new line)" onkeypress="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); postAnswer(); }"></textarea>
+                    <textarea id="answerInput" class="form-control border bg-secondary-subtle mb-3" rows="4" placeholder="Write answer or paste a Media URL (YouTube/Image/Audio)..." onkeypress="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); postAnswer(); }"></textarea>
                     <div class="text-end">
                         <small class="text-muted float-start mt-2">Press 'Enter' to submit</small>
-                        <button class="btn btn-primary btn-lg fw-bold rounded-pill px-5 shadow" onclick="postAnswer()">Submit Answer</button>
+                        <button class="btn btn-light border rounded-circle me-2" onclick="attachMedia()"><i class="fas fa-paperclip text-success"></i></button>
+                        <button class="btn btn-primary fw-bold rounded-pill px-5 shadow" onclick="postAnswer()">Submit Answer</button>
                     </div>
                 </div>
 
                 <h4 class="fw-bold border-start border-4 border-success ps-3 mb-4">Community Answers</h4>
-                <div id="answersContainer">
-                    <p class="text-muted text-center py-5 bg-white rounded-4 shadow-sm"><i class="fas fa-comment-slash fa-2x mb-3"></i><br>No answers yet. Be the first to help!</p>
-                </div>
+                <div id="answersContainer"></div>
 
             </div>
         </div>
@@ -65,46 +68,57 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const qId = urlParams.get('id');
+        const qId = new URLSearchParams(window.location.search).get('id');
+
+        function formatMedia(text) {
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            return text.replace(urlRegex, function(url) {
+                if (url.match(/\.(jpeg|jpg|gif|png)$/i)) return `<br><img src="${url}" class="img-fluid rounded mt-2 shadow" style="max-height: 300px;">`;
+                if (url.match(/\.(mp4|webm)$/i)) return `<br><video controls class="w-100 rounded mt-2 shadow" style="max-height: 300px;"><source src="${url}"></video>`;
+                if (url.match(/\.(mp3|wav)$/i)) return `<br><audio controls class="w-100 mt-2"><source src="${url}"></audio>`;
+                if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                    let vidId = url.split('v=')[1] || url.split('/').pop();
+                    if(vidId.includes('&')) vidId = vidId.split('&')[0];
+                    return `<br><iframe class="w-100 rounded mt-2 shadow" height="300" src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen></iframe>`;
+                }
+                return `<a href="${url}" target="_blank" class="text-primary text-truncate">${url}</a>`;
+            });
+        }
+
+        function attachMedia() {
+            const link = prompt("Paste a URL for an Image, Video, YouTube, or Audio:");
+            if(link) { document.getElementById('answerInput').value += " " + link; }
+        }
 
         setTimeout(() => {
-            if(!qId) { document.getElementById('questionData').innerHTML = "<h3 class='text-danger text-center'>Question not found!</h3>"; return; }
+            if(!qId) return;
 
             db.collection("questions").doc(qId).get().then(doc => {
                 if(doc.exists) {
                     const q = doc.data();
-                    const avatarUrl = `https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=100&q=80&sig=${q.authorEmail.length}`;
-                    
+                    const avatarUrl = `https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100&q=80&sig=${q.authorEmail.length}`;
                     document.getElementById('questionData').innerHTML = `
                         <div class="d-flex justify-content-between align-items-start mb-4">
-                            <div class="d-flex align-items-center">
-                                <img src="${avatarUrl}" class="avatar me-3">
-                                <div><h6 class="mb-0 fw-bold">${q.authorEmail}</h6><span class="badge bg-primary mt-1">${q.topic || 'General'}</span></div>
-                            </div>
-                            <button class="btn btn-outline-dark btn-sm rounded-pill fw-bold" onclick="requestPrivateChat('${q.authorEmail}')"><i class="fas fa-envelope"></i> Message Author</button>
+                            <div class="d-flex align-items-center"><img src="${avatarUrl}" class="avatar me-3"><div><h6 class="mb-0 fw-bold">${q.authorEmail}</h6></div></div>
+                            <button class="btn btn-outline-primary btn-sm rounded-pill fw-bold" onclick="requestChat('${q.authorEmail}')"><i class="fas fa-envelope"></i> Message Author</button>
                         </div>
                         <h2 class="fw-bold display-6 mb-3">${q.title}</h2>
-                        <p class="fs-5 text-secondary lh-lg">${q.desc}</p>
+                        <p class="fs-5 lh-lg">${formatMedia(q.desc)}</p>
                     `;
                 }
             });
 
             db.collection("questions").doc(qId).collection("answers").orderBy("timestamp", "asc").onSnapshot(snapshot => {
                 const container = document.getElementById('answersContainer');
-                if(!snapshot.empty) container.innerHTML = ''; 
-                
+                if(snapshot.empty) { container.innerHTML = '<p class="text-center text-muted">No answers yet.</p>'; return; }
+                container.innerHTML = ''; 
                 snapshot.forEach(doc => {
                     const ans = doc.data();
-                    const avatarUrl = `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80&sig=${ans.authorEmail.length}`;
-                    
+                    const avatarUrl = `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80&sig=${ans.authorEmail.length}`;
                     container.innerHTML += `
-                        <div class="card p-4 mb-4 shadow-sm border-0 rounded-4">
-                            <div class="d-flex align-items-center mb-3 border-bottom pb-3">
-                                <img src="${avatarUrl}" class="rounded-circle me-3" width="40" height="40" style="object-fit: cover;">
-                                <div><small class="text-primary fw-bold mb-0 d-block"><i class="fas fa-check-circle"></i> ${ans.authorEmail}</small><small class="text-muted">Verified Contributor</small></div>
-                            </div>
-                            <div class="fs-5 text-dark lh-base">${ans.text}</div>
+                        <div class="card p-4 mb-4 shadow-sm border rounded-4">
+                            <div class="d-flex align-items-center mb-3 border-bottom pb-3"><img src="${avatarUrl}" class="rounded-circle me-3" width="40" height="40" style="object-fit: cover;"><div><small class="text-success fw-bold d-block"><i class="fas fa-check-circle"></i> ${ans.authorEmail}</small></div></div>
+                            <div class="fs-5 lh-base">${formatMedia(ans.text)}</div>
                         </div>
                     `;
                 });
@@ -112,19 +126,15 @@
         }, 1000);
 
         function postAnswer() {
-            if (!auth.currentUser) { alert("You must login to post an answer!"); window.location.href = "login.html"; return; }
-            const text = document.getElementById('answerInput').value;
-            if(!text.trim()) return;
-
-            db.collection("questions").doc(qId).collection("answers").add({
-                text: text, authorEmail: auth.currentUser.email, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => document.getElementById('answerInput').value = '');
+            if (!auth.currentUser) { window.location.href = "login.html"; return; }
+            const text = document.getElementById('answerInput').value.trim();
+            if(!text) return;
+            db.collection("questions").doc(qId).collection("answers").add({ text: text, authorEmail: auth.currentUser.email, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => document.getElementById('answerInput').value = '');
         }
 
-        function requestPrivateChat(targetEmail) {
-            if(!auth.currentUser) { alert("Login required."); window.location.href = "login.html"; return; }
-            if(targetEmail === auth.currentUser.email) { alert("You cannot message yourself!"); return; }
-            window.location.href = `private-chat.html?requestTo=${targetEmail}`;
+        function requestChat(email) {
+            if(!auth.currentUser || email === auth.currentUser.email) return;
+            window.location.href = `private-chat.html?requestTo=${email}`;
         }
     </script>
 </body>

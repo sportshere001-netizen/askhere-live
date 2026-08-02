@@ -8,13 +8,26 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="config.js"></script>
+    <script>
+        // Theme initialization
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+        function toggleTheme() {
+            const html = document.documentElement;
+            const next = html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-bs-theme', next);
+            localStorage.setItem('theme', next);
+        }
+    </script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; padding-top: 70px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bs-body-bg); padding-top: 70px; }
         .hero-section { background: linear-gradient(135deg, #0d6efd 0%, #00d4ff 100%); color: white; padding: 40px 0; border-radius: 15px; margin-bottom: 30px; box-shadow: 0 10px 20px rgba(13,110,253,0.2); }
-        .question-card { border: none; border-radius: 15px; transition: transform 0.2s, box-shadow 0.2s; }
+        .question-card { border: none; border-radius: 15px; transition: transform 0.2s, box-shadow 0.2s; background-color: var(--bs-body-bg); }
         .question-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
         .avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #0d6efd; }
-        .sidebar-card { border-radius: 15px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .sidebar-card { border-radius: 15px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: var(--bs-body-bg); }
+        .chat-preview-box { max-height: 200px; overflow-y: hidden; position: relative; }
+        .chat-preview-box::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 50px; background: linear-gradient(transparent, var(--bs-body-bg)); }
     </style>
 </head>
 <body>
@@ -34,7 +47,8 @@
                     <li class="nav-item"><a class="nav-link fw-semibold" href="private-chat.html"><i class="fas fa-envelope text-warning"></i> Inbox</a></li>
                     <li class="nav-item"><a class="nav-link fw-semibold" href="about.html"><i class="fas fa-info-circle text-light"></i> Guide</a></li>
                 </ul>
-                <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center mt-2 mt-lg-0 gap-2">
+                    <button class="btn btn-outline-light rounded-circle" onclick="toggleTheme()" title="Toggle Dark Mode"><i class="fas fa-adjust"></i></button>
                     <a class="btn btn-primary text-white fw-bold px-4 rounded-pill shadow-sm" id="navLoginBtn" href="login.html">Login</a>
                 </div>
             </div>
@@ -44,42 +58,47 @@
     <div class="container my-4">
         <div class="row g-4">
             
+            <!-- Left Sidebar -->
             <div class="col-lg-3 d-none d-lg-block">
                 <div class="card sidebar-card p-3 sticky-top" style="top: 90px;">
-                    <h6 class="fw-bold text-muted mb-3 text-uppercase">Navigation</h6>
+                    <h6 class="fw-bold text-muted mb-3 text-uppercase"><i class="fas fa-compass"></i> Navigation</h6>
                     <div class="list-group list-group-flush">
-                        <a href="about.html" class="list-group-item list-group-item-action border-0"><i class="fas fa-book-open text-primary me-2"></i> How to Use AskHere</a>
-                        <a href="confessions.html" class="list-group-item list-group-item-action border-0"><i class="fas fa-mask text-dark me-2"></i> Anonymous Confessions</a>
-                        <a href="private-chat.html" class="list-group-item list-group-item-action border-0"><i class="fas fa-inbox text-warning me-2"></i> Check Private Inbox</a>
+                        <a href="about.html" class="list-group-item list-group-item-action border-0 bg-transparent"><i class="fas fa-book-open text-primary me-2"></i> How to Use AskHere</a>
+                        <a href="confessions.html" class="list-group-item list-group-item-action border-0 bg-transparent"><i class="fas fa-mask text-secondary me-2"></i> Confessions</a>
+                        <a href="private-chat.html" class="list-group-item list-group-item-action border-0 bg-transparent"><i class="fas fa-inbox text-warning me-2"></i> Private Inbox</a>
                     </div>
                 </div>
             </div>
 
             <!-- Center Feed -->
             <div class="col-lg-6">
-                <div class="hero-section text-center p-5">
+                <div class="hero-section text-center p-4 p-md-5">
                     <h2 class="fw-bold display-6 mb-3">What do you want to ask?</h2>
-                    <button class="btn btn-light btn-lg fw-bold rounded-pill px-5 text-primary shadow" data-bs-toggle="modal" data-bs-target="#askModal">Ask the Community</button>
+                    <button class="btn btn-light btn-lg fw-bold rounded-pill px-5 text-primary shadow w-100 w-md-auto" data-bs-toggle="modal" data-bs-target="#askModal">Ask the Community</button>
                 </div>
 
                 <div id="feed-container">
-                    <!-- Default content while loading -->
-                    <div class="card question-card mb-4 p-4 shadow-sm bg-white opacity-50">
+                    <!-- Default Hardcoded Content (Shows while loading) -->
+                    <div class="card question-card mb-4 p-4 shadow-sm border shadow">
                         <div class="d-flex align-items-center mb-3">
-                            <div class="rounded-circle bg-secondary me-3" style="width: 45px; height: 45px;"></div>
-                            <div class="bg-secondary rounded w-50" style="height: 20px;"></div>
+                            <img src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100" class="avatar me-3">
+                            <div><h6 class="mb-0 fw-bold">Admin <span class="badge bg-success">Tutorial</span></h6><small class="text-muted">Just now</small></div>
                         </div>
-                        <div class="bg-secondary rounded w-75 mb-2" style="height: 30px;"></div>
-                        <div class="bg-secondary rounded w-100" style="height: 15px;"></div>
+                        <h4 class="fw-bold mb-2">Welcome to AskHere! 💡</h4>
+                        <p class="text-secondary mb-4 fs-5">This is a sample post. You can ask questions, answer others, share YouTube links, or jump into the anonymous Global Chat!</p>
                     </div>
                 </div>
             </div>
 
-            <div class="col-lg-3 d-none d-lg-block">
-                <div class="card sidebar-card p-3 sticky-top" style="top: 90px;">
-                    <h6 class="fw-bold text-muted mb-3 text-uppercase">Top Contributors</h6>
-                    <div class="d-flex align-items-center mb-3"><img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=50&q=80" class="rounded-circle me-2" width="40"><div><h6 class="mb-0 fw-bold fs-6">Alex Tech</h6><small class="text-muted">1.2k Answers</small></div></div>
-                    <div class="d-flex align-items-center mb-3"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=50&q=80" class="rounded-circle me-2" width="40"><div><h6 class="mb-0 fw-bold fs-6">Dr. Sarah</h6><small class="text-muted">890 Answers</small></div></div>
+            <!-- Right Sidebar -->
+            <div class="col-lg-3">
+                <!-- Global Chat Preview -->
+                <div class="card sidebar-card p-3 mb-4 shadow">
+                    <h6 class="fw-bold text-primary mb-3 text-uppercase"><i class="fas fa-globe"></i> Live Global Chat</h6>
+                    <div class="chat-preview-box" id="chat-preview">
+                        <small class="text-muted"><i class="fas fa-spinner fa-spin"></i> Loading chat...</small>
+                    </div>
+                    <a href="chat.html" class="btn btn-outline-primary btn-sm rounded-pill mt-3 fw-bold w-100">Join the Conversation</a>
                 </div>
             </div>
         </div>
@@ -94,9 +113,9 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <input type="text" id="newQuestionTitle" class="form-control form-control-lg bg-light border-0 mb-3" placeholder="Start your question with 'What', 'How', 'Why'...">
-                    <textarea id="newQuestionDesc" class="form-control bg-light border-0 mb-3" rows="4" placeholder="Provide context and details..." onkeypress="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); postQuestion(); }"></textarea>
-                    <div class="text-end"><small class="text-muted float-start mt-2">Press 'Enter' to submit</small><button type="button" class="btn btn-primary btn-lg rounded-pill fw-bold" onclick="postQuestion()">Publish Globally</button></div>
+                    <input type="text" id="newQuestionTitle" class="form-control form-control-lg bg-light border-0 mb-3" placeholder="Question Title (e.g. How to...)" onkeypress="if(event.key === 'Enter') document.getElementById('newQuestionDesc').focus();">
+                    <textarea id="newQuestionDesc" class="form-control bg-light border-0 mb-3" rows="4" placeholder="Add a description or paste a Media URL (YouTube, Image, Audio)..." onkeypress="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); postQuestion(); }"></textarea>
+                    <div class="text-end"><button type="button" class="btn btn-primary btn-lg rounded-pill fw-bold w-100" onclick="postQuestion()">Publish Globally</button></div>
                 </div>
             </div>
         </div>
@@ -104,63 +123,80 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Enter key for title input as well
-        document.getElementById('newQuestionTitle').addEventListener('keypress', function(e) { if(e.key === 'Enter') document.getElementById('newQuestionDesc').focus(); });
+        // Media Formatter for links
+        function formatMedia(text) {
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            return text.replace(urlRegex, function(url) {
+                if (url.match(/\.(jpeg|jpg|gif|png)$/i)) return `<br><img src="${url}" class="img-fluid rounded mt-2 shadow-sm" style="max-height: 250px;">`;
+                if (url.match(/\.(mp4|webm)$/i)) return `<br><video controls class="w-100 rounded mt-2 shadow-sm" style="max-height: 250px;"><source src="${url}"></video>`;
+                if (url.match(/\.(mp3|wav)$/i)) return `<br><audio controls class="w-100 mt-2"><source src="${url}"></audio>`;
+                if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                    let videoId = url.split('v=')[1] || url.split('/').pop();
+                    if(videoId.includes('&')) videoId = videoId.split('&')[0];
+                    return `<br><iframe class="w-100 rounded mt-2 shadow-sm" height="250" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+                }
+                return `<a href="${url}" target="_blank" class="text-primary text-truncate">${url}</a>`;
+            });
+        }
 
         setTimeout(() => {
+            // Load Feed
             db.collection("questions").orderBy("createdAt", "desc").onSnapshot(snapshot => {
                 const feed = document.getElementById('feed-container');
-                if (snapshot.empty) {
-                    feed.innerHTML = '<div class="text-center text-muted py-5"><h4>No questions yet.</h4><p>Be the first to ask the community!</p></div>';
-                    return;
-                }
-                feed.innerHTML = ''; 
+                if (!snapshot.empty) feed.innerHTML = ''; 
                 
                 snapshot.forEach(doc => {
                     const q = doc.data();
-                    const avatarId = q.authorEmail ? q.authorEmail.length % 10 : 1; 
-                    const avatarUrl = `https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=100&q=80&sig=${avatarId}`;
+                    const avatarUrl = `https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100&q=80&sig=${q.authorEmail ? q.authorEmail.length : 1}`;
 
                     feed.innerHTML += `
-                        <div class="card question-card mb-4 p-4 shadow-sm bg-white">
+                        <div class="card question-card mb-4 p-4 shadow-sm border">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <div class="d-flex align-items-center">
                                     <img src="${avatarUrl}" class="avatar me-3">
-                                    <div>
-                                        <h6 class="mb-0 fw-bold">${q.authorEmail || 'Anonymous User'}</h6>
-                                        <small class="text-muted"><i class="far fa-clock"></i> Live Feed</small>
-                                    </div>
+                                    <div><h6 class="mb-0 fw-bold">${q.authorEmail || 'Anonymous'}</h6><small class="text-muted">Live Feed</small></div>
                                 </div>
-                                <button class="btn btn-outline-primary btn-sm rounded-pill fw-bold" onclick="requestPrivateChat('${q.authorEmail}')"><i class="fas fa-envelope"></i> Message</button>
+                                <button class="btn btn-outline-primary btn-sm rounded-pill fw-bold" onclick="requestPrivateChat('${q.authorEmail}')"><i class="fas fa-envelope d-none d-md-inline"></i> Message</button>
                             </div>
                             <h4 class="fw-bold mb-2">${q.title}</h4>
-                            <p class="text-secondary mb-4 fs-5">${q.desc}</p>
+                            <p class="mb-4 fs-5">${formatMedia(q.desc)}</p>
                             <div class="d-flex justify-content-between border-top pt-3">
-                                <a href="question.html?id=${doc.id}" class="btn btn-primary rounded-pill fw-bold px-4 shadow-sm"><i class="fas fa-book-open"></i> Read & Answer</a>
-                                <button class="btn btn-light rounded-circle text-muted" onclick="alert('Link Copied!')"><i class="fas fa-share-alt"></i></button>
+                                <a href="question.html?id=${doc.id}" class="btn btn-primary rounded-pill fw-bold px-4 shadow-sm w-100 w-md-auto text-center"><i class="fas fa-book-open"></i> Read & Answer</a>
                             </div>
                         </div>
                     `;
                 });
             });
+
+            // Load Chat Preview
+            db.collection("global_chat").orderBy("timestamp", "desc").limit(4).onSnapshot(snapshot => {
+                const preview = document.getElementById('chat-preview');
+                preview.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    let previewText = data.text;
+                    if(previewText.includes('http')) previewText = "📎 Media Attachment";
+                    preview.innerHTML += `<div class="mb-2 border-bottom pb-1"><small class="fw-bold text-primary">${data.sender}:</small> <small class="text-muted d-inline-block text-truncate" style="max-width: 70%; vertical-align: bottom;">${previewText}</small></div>`;
+                });
+            });
         }, 1000);
 
         function postQuestion() {
-            if (!auth.currentUser) { alert("You must be logged in to post a question! Please log in."); window.location.href = "login.html"; return; }
+            if (!auth.currentUser) { alert("Login required!"); window.location.href = "login.html"; return; }
             const title = document.getElementById('newQuestionTitle').value;
             const desc = document.getElementById('newQuestionDesc').value;
-            if(!title) { alert("Title is required!"); return; }
+            if(!title) return;
 
             db.collection("questions").add({
                 title: title, desc: desc, authorEmail: auth.currentUser.email, createdAt: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => {
-                document.getElementById('newQuestionTitle').value = ''; document.getElementById('newQuestionDesc').value = '';
                 bootstrap.Modal.getInstance(document.getElementById('askModal')).hide();
-            }).catch(err => alert(err.message));
+                document.getElementById('newQuestionTitle').value = ''; document.getElementById('newQuestionDesc').value = '';
+            });
         }
 
         function requestPrivateChat(targetEmail) {
-            if(!auth.currentUser) { alert("You must login to send a private message request."); window.location.href = "login.html"; return; }
+            if(!auth.currentUser) { window.location.href = "login.html"; return; }
             if(targetEmail === auth.currentUser.email) { alert("You cannot message yourself!"); return; }
             window.location.href = `private-chat.html?requestTo=${targetEmail}`;
         }
