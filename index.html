@@ -4,42 +4,83 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AskHere - Share & Grow Knowledge</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💡</text></svg>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Connects to Firebase -->
     <script src="config.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; padding-top: 70px; }
-        .question-card { border-left: 4px solid #0d6efd; transition: all 0.3s ease; }
-        .question-card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; padding-top: 70px; }
+        .hero-section { background: linear-gradient(135deg, #0d6efd 0%, #00d4ff 100%); color: white; padding: 40px 0; border-radius: 15px; margin-bottom: 30px; box-shadow: 0 10px 20px rgba(13,110,253,0.2); }
+        .question-card { border: none; border-radius: 15px; transition: transform 0.2s, box-shadow 0.2s; }
+        .question-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #0d6efd; }
+        .sidebar-card { border-radius: 15px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-bold fs-3" href="index.html"><i class="fas fa-lightbulb text-primary"></i> AskHere</a>
-            <div class="d-flex align-items-center ms-auto gap-3">
-                <a class="nav-link text-white fw-semibold" href="chat.html"><i class="fas fa-globe text-primary"></i> Global Chat</a>
-                <a class="btn btn-primary text-white fw-bold px-4 rounded-pill" id="navLoginBtn" href="login.html">Login</a>
+    <!-- Unified Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand fw-bold fs-4" href="index.html"><i class="fas fa-brain text-info"></i> AskHere</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mx-auto gap-2">
+                    <li class="nav-item"><a class="nav-link active fw-bold text-white" href="index.html"><i class="fas fa-home"></i> Feed</a></li>
+                    <li class="nav-item"><a class="nav-link fw-semibold" href="chat.html"><i class="fas fa-globe text-info"></i> Global Chat</a></li>
+                    <li class="nav-item"><a class="nav-link fw-semibold" href="confessions.html"><i class="fas fa-user-secret text-secondary"></i> Confessions</a></li>
+                    <li class="nav-item"><a class="nav-link fw-semibold" href="private-chat.html"><i class="fas fa-envelope text-warning"></i> Inbox</a></li>
+                    <li class="nav-item"><a class="nav-link fw-semibold" href="about.html"><i class="fas fa-info-circle text-light"></i> Guide</a></li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <a class="btn btn-primary text-white fw-bold px-4 rounded-pill shadow-sm" id="navLoginBtn" href="login.html">Login</a>
+                </div>
             </div>
         </div>
     </nav>
 
-    <div class="container my-5">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                
-                <div class="text-center mb-5">
-                    <h2 class="fw-bold mb-3">Ask. Answer. Discover.</h2>
-                    <button class="btn btn-primary btn-lg fw-bold rounded-pill px-5 shadow-lg" data-bs-toggle="modal" data-bs-target="#askModal">Ask a Question</button>
+    <div class="container my-4">
+        <div class="row g-4">
+            
+            <div class="col-lg-3 d-none d-lg-block">
+                <div class="card sidebar-card p-3 sticky-top" style="top: 90px;">
+                    <h6 class="fw-bold text-muted mb-3 text-uppercase">Navigation</h6>
+                    <div class="list-group list-group-flush">
+                        <a href="about.html" class="list-group-item list-group-item-action border-0"><i class="fas fa-book-open text-primary me-2"></i> How to Use AskHere</a>
+                        <a href="confessions.html" class="list-group-item list-group-item-action border-0"><i class="fas fa-mask text-dark me-2"></i> Anonymous Confessions</a>
+                        <a href="private-chat.html" class="list-group-item list-group-item-action border-0"><i class="fas fa-inbox text-warning me-2"></i> Check Private Inbox</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Feed -->
+            <div class="col-lg-6">
+                <div class="hero-section text-center p-5">
+                    <h2 class="fw-bold display-6 mb-3">What do you want to ask?</h2>
+                    <button class="btn btn-light btn-lg fw-bold rounded-pill px-5 text-primary shadow" data-bs-toggle="modal" data-bs-target="#askModal">Ask the Community</button>
                 </div>
 
-                <!-- LIVE FEED CONTAINER -->
                 <div id="feed-container">
-                    <p class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Loading live global feed...</p>
+                    <!-- Default content while loading -->
+                    <div class="card question-card mb-4 p-4 shadow-sm bg-white opacity-50">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="rounded-circle bg-secondary me-3" style="width: 45px; height: 45px;"></div>
+                            <div class="bg-secondary rounded w-50" style="height: 20px;"></div>
+                        </div>
+                        <div class="bg-secondary rounded w-75 mb-2" style="height: 30px;"></div>
+                        <div class="bg-secondary rounded w-100" style="height: 15px;"></div>
+                    </div>
                 </div>
+            </div>
 
+            <div class="col-lg-3 d-none d-lg-block">
+                <div class="card sidebar-card p-3 sticky-top" style="top: 90px;">
+                    <h6 class="fw-bold text-muted mb-3 text-uppercase">Top Contributors</h6>
+                    <div class="d-flex align-items-center mb-3"><img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=50&q=80" class="rounded-circle me-2" width="40"><div><h6 class="mb-0 fw-bold fs-6">Alex Tech</h6><small class="text-muted">1.2k Answers</small></div></div>
+                    <div class="d-flex align-items-center mb-3"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=50&q=80" class="rounded-circle me-2" width="40"><div><h6 class="mb-0 fw-bold fs-6">Dr. Sarah</h6><small class="text-muted">890 Answers</small></div></div>
+                </div>
             </div>
         </div>
     </div>
@@ -47,15 +88,15 @@
     <!-- Ask Question Modal -->
     <div class="modal fade" id="askModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold">Ask the World</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 15px;">
+                <div class="modal-header bg-primary text-white" style="border-radius: 15px 15px 0 0;">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-question-circle"></i> Create Post</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <input type="text" id="newQuestionTitle" class="form-control mb-3" placeholder="What is your question? (e.g. How does...)">
-                    <textarea id="newQuestionDesc" class="form-control mb-3" rows="3" placeholder="Provide context..."></textarea>
-                    <button type="button" class="btn btn-primary w-100 rounded-pill fw-bold" onclick="postQuestion()">Post Globally</button>
+                    <input type="text" id="newQuestionTitle" class="form-control form-control-lg bg-light border-0 mb-3" placeholder="Start your question with 'What', 'How', 'Why'...">
+                    <textarea id="newQuestionDesc" class="form-control bg-light border-0 mb-3" rows="4" placeholder="Provide context and details..." onkeypress="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); postQuestion(); }"></textarea>
+                    <div class="text-end"><small class="text-muted float-start mt-2">Press 'Enter' to submit</small><button type="button" class="btn btn-primary btn-lg rounded-pill fw-bold" onclick="postQuestion()">Publish Globally</button></div>
                 </div>
             </div>
         </div>
@@ -63,22 +104,40 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Wait for Firebase to load from config.js
+        // Enter key for title input as well
+        document.getElementById('newQuestionTitle').addEventListener('keypress', function(e) { if(e.key === 'Enter') document.getElementById('newQuestionDesc').focus(); });
+
         setTimeout(() => {
-            // Listen to all questions live
             db.collection("questions").orderBy("createdAt", "desc").onSnapshot(snapshot => {
                 const feed = document.getElementById('feed-container');
+                if (snapshot.empty) {
+                    feed.innerHTML = '<div class="text-center text-muted py-5"><h4>No questions yet.</h4><p>Be the first to ask the community!</p></div>';
+                    return;
+                }
                 feed.innerHTML = ''; 
                 
                 snapshot.forEach(doc => {
                     const q = doc.data();
+                    const avatarId = q.authorEmail ? q.authorEmail.length % 10 : 1; 
+                    const avatarUrl = `https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=100&q=80&sig=${avatarId}`;
+
                     feed.innerHTML += `
-                        <div class="card question-card mb-4 p-4 shadow-sm border-0">
-                            <small class="text-muted mb-2"><i class="fas fa-user-circle text-primary"></i> ${q.authorEmail || 'Anonymous'}</small>
-                            <h4 class="fw-bold">${q.title}</h4>
-                            <p class="text-secondary mb-3">${q.desc}</p>
-                            <div class="d-flex justify-content-between">
-                                <a href="question.html?id=${doc.id}" class="btn btn-outline-primary btn-sm rounded-pill fw-bold px-4">Read Answers & Reply</a>
+                        <div class="card question-card mb-4 p-4 shadow-sm bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="d-flex align-items-center">
+                                    <img src="${avatarUrl}" class="avatar me-3">
+                                    <div>
+                                        <h6 class="mb-0 fw-bold">${q.authorEmail || 'Anonymous User'}</h6>
+                                        <small class="text-muted"><i class="far fa-clock"></i> Live Feed</small>
+                                    </div>
+                                </div>
+                                <button class="btn btn-outline-primary btn-sm rounded-pill fw-bold" onclick="requestPrivateChat('${q.authorEmail}')"><i class="fas fa-envelope"></i> Message</button>
+                            </div>
+                            <h4 class="fw-bold mb-2">${q.title}</h4>
+                            <p class="text-secondary mb-4 fs-5">${q.desc}</p>
+                            <div class="d-flex justify-content-between border-top pt-3">
+                                <a href="question.html?id=${doc.id}" class="btn btn-primary rounded-pill fw-bold px-4 shadow-sm"><i class="fas fa-book-open"></i> Read & Answer</a>
+                                <button class="btn btn-light rounded-circle text-muted" onclick="alert('Link Copied!')"><i class="fas fa-share-alt"></i></button>
                             </div>
                         </div>
                     `;
@@ -87,28 +146,23 @@
         }, 1000);
 
         function postQuestion() {
-            if (!auth.currentUser) {
-                alert("You must be logged in to post a question!");
-                window.location.href = "login.html";
-                return;
-            }
-
+            if (!auth.currentUser) { alert("You must be logged in to post a question! Please log in."); window.location.href = "login.html"; return; }
             const title = document.getElementById('newQuestionTitle').value;
             const desc = document.getElementById('newQuestionDesc').value;
-            
-            if(!title) return;
+            if(!title) { alert("Title is required!"); return; }
 
-            // Save to Firebase
             db.collection("questions").add({
-                title: title,
-                desc: desc,
-                authorEmail: auth.currentUser.email,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                title: title, desc: desc, authorEmail: auth.currentUser.email, createdAt: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => {
-                document.getElementById('newQuestionTitle').value = '';
-                document.getElementById('newQuestionDesc').value = '';
+                document.getElementById('newQuestionTitle').value = ''; document.getElementById('newQuestionDesc').value = '';
                 bootstrap.Modal.getInstance(document.getElementById('askModal')).hide();
             }).catch(err => alert(err.message));
+        }
+
+        function requestPrivateChat(targetEmail) {
+            if(!auth.currentUser) { alert("You must login to send a private message request."); window.location.href = "login.html"; return; }
+            if(targetEmail === auth.currentUser.email) { alert("You cannot message yourself!"); return; }
+            window.location.href = `private-chat.html?requestTo=${targetEmail}`;
         }
     </script>
 </body>

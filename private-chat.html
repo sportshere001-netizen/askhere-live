@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private Inbox - AskHere</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💡</text></svg>">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="config.js"></script>
+    <style>
+        body { background-color: #f0f2f5; padding-top: 60px; height: 100vh; overflow: hidden; display: flex; flex-direction: column;}
+        .layout-container { flex-grow: 1; display: flex; background: white; margin: 20px auto; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); max-width: 1200px; width: 100%; overflow: hidden;}
+        .sidebar { width: 350px; background: #fff; border-right: 1px solid #e4e6eb; display: flex; flex-direction: column;}
+        .chat-area { flex-grow: 1; display: flex; flex-direction: column; background: #f0f2f5; }
+        .list-group-item { cursor: pointer; transition: 0.2s; border: none; border-bottom: 1px solid #f0f2f5; padding: 20px; }
+        .list-group-item:hover { background-color: #f8f9fa; }
+        .list-group-item.active { background-color: #e7f1ff; color: #000; border-left: 4px solid #0d6efd; }
+        .messages { flex-grow: 1; padding: 30px; overflow-y: auto; }
+        .message { margin-bottom: 20px; display: flex; }
+        .message-content { background: white; padding: 12px 18px; border-radius: 20px; max-width: 70%; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .message.self { justify-content: flex-end; }
+        .message.self .message-content { background: #0d6efd; color: white; }
+    </style>
+</head>
+<body>
+
+    <!-- Unified Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand fw-bold fs-4" href="index.html"><i class="fas fa-brain text-info"></i> AskHere</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mx-auto gap-2">
+                    <li class="nav-item"><a class="nav-link fw-semibold" href="index.html"><i class="fas fa-home"></i> Feed</a></li>
+                    <li class="nav-item"><a class="nav-link fw-semibold" href="chat.html"><i class="fas fa-globe text-info"></i> Global Chat</a></li>
+                    <li class="nav-item"><a class="nav-link fw-semibold" href="confessions.html"><i class="fas fa-user-secret text-secondary"></i> Confessions</a></li>
+                    <li class="nav-item"><a class="nav-link active fw-bold text-white" href="private-chat.html"><i class="fas fa-envelope text-warning"></i> Inbox</a></li>
+                    <li class="nav-item"><a class="nav-link fw-semibold" href="about.html"><i class="fas fa-info-circle text-light"></i> Guide</a></li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <a class="btn btn-primary text-white fw-bold px-4 rounded-pill shadow-sm" id="navLoginBtn" href="login.html">Login</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="layout-container">
+        <!-- Sidebar (Inbox & Requests) -->
+        <div class="sidebar">
+            <div class="p-4 border-bottom bg-light">
+                <h5 class="fw-bold mb-3">Send Request</h5>
+                <div class="input-group shadow-sm">
+                    <input type="email" id="requestEmailInput" class="form-control bg-white border-0" placeholder="User's Email..." onkeypress="if(event.key === 'Enter') sendRequest()">
+                    <button class="btn btn-primary fw-bold" onclick="sendRequest()">Send</button>
+                </div>
+            </div>
+            
+            <ul class="nav nav-tabs nav-fill bg-light" id="inboxTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-bold py-3" data-bs-toggle="tab" data-bs-target="#activeChats">Chats</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold py-3" data-bs-toggle="tab" data-bs-target="#pendingRequests">Requests <span id="reqBadge" class="badge bg-danger ms-1 d-none">!</span></button>
+                </li>
+            </ul>
+            
+            <div class="tab-content flex-grow-1 overflow-auto">
+                <div class="tab-pane fade show active" id="activeChats">
+                    <div class="list-group list-group-flush" id="chatsList">
+                        <div class="p-4 text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Loading Inbox...</div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="pendingRequests">
+                    <div class="list-group list-group-flush" id="requestsList">
+                        <div class="p-4 text-center text-muted">No pending requests.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area">
+            <div class="bg-white p-4 border-bottom shadow-sm">
+                <h5 class="mb-0 fw-bold text-dark" id="chatHeader">Select a conversation</h5>
+            </div>
+
+            <div class="messages" id="privateMessages">
+                <div class="text-center text-muted mt-5"><i class="fas fa-comments fa-3x mb-3 opacity-50"></i><p>Select a user from the left to start chatting securely.</p></div>
+            </div>
+
+            <div class="p-4 bg-white border-top d-flex align-items-center">
+                <input type="text" id="privateInput" class="form-control form-control-lg rounded-pill border-0 bg-light px-4 shadow-sm" placeholder="Type a secure message..." onkeypress="if(event.key === 'Enter') sendPrivateMessage()" disabled>
+                <button class="btn btn-primary rounded-circle ms-3 p-3 shadow" id="sendBtn" onclick="sendPrivateMessage()" disabled><i class="fas fa-paper-plane fs-5"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentChatUser = null;
+        let myEmail = null;
+        let unsubscribeMessages = null;
+
+        setTimeout(() => {
+            if(!auth.currentUser) {
+                alert("Private messaging requires an account. Redirecting to login...");
+                window.location.href = "login.html";
+                return;
+            }
+            myEmail = auth.currentUser.email;
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const reqTo = urlParams.get('requestTo');
+            if(reqTo && reqTo !== myEmail) { document.getElementById('requestEmailInput').value = reqTo; }
+
+            listenToRequests(); listenToActiveChats();
+        }, 1500);
+
+        function sendRequest() {
+            const target = document.getElementById('requestEmailInput').value.trim();
+            if(!target || target === myEmail) return;
+
+            db.collection("chat_requests").add({
+                from: myEmail, to: target, status: 'pending', timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => { alert("Request sent to " + target); document.getElementById('requestEmailInput').value = ''; });
+        }
+
+        function listenToRequests() {
+            db.collection("chat_requests").where("to", "==", myEmail).where("status", "==", "pending")
+              .onSnapshot(snapshot => {
+                  const list = document.getElementById('requestsList');
+                  const badge = document.getElementById('reqBadge');
+                  list.innerHTML = '';
+                  
+                  if(snapshot.empty) {
+                      badge.classList.add('d-none');
+                      list.innerHTML = '<div class="p-4 text-center text-muted">No pending requests.</div>';
+                      return;
+                  }
+                  
+                  badge.classList.remove('d-none');
+                  snapshot.forEach(doc => {
+                      const data = doc.data();
+                      list.innerHTML += `
+                          <div class="list-group-item d-flex justify-content-between align-items-center">
+                              <div><small class="fw-bold d-block">${data.from}</small><small class="text-muted">Wants to chat</small></div>
+                              <button class="btn btn-success btn-sm rounded-pill" onclick="acceptRequest('${doc.id}', '${data.from}')">Accept</button>
+                          </div>
+                      `;
+                  });
+              });
+        }
+
+        function acceptRequest(docId, fromUser) {
+            db.collection("chat_requests").doc(docId).update({ status: 'accepted' }).then(() => {
+                db.collection("active_chats").add({ users: [myEmail, fromUser] });
+                alert("Request accepted! They are now in your Chats tab.");
+            });
+        }
+
+        function listenToActiveChats() {
+            db.collection("active_chats").where("users", "array-contains", myEmail)
+              .onSnapshot(snapshot => {
+                  const list = document.getElementById('chatsList');
+                  list.innerHTML = '';
+                  if(snapshot.empty) { list.innerHTML = '<div class="p-4 text-center text-muted">No active chats. Search for an email above to start one!</div>'; return; }
+
+                  snapshot.forEach(doc => {
+                      const users = doc.data().users;
+                      const otherUser = users[0] === myEmail ? users[1] : users[0];
+                      const roomId = users.sort().join('_'); 
+
+                      list.innerHTML += `
+                          <div class="list-group-item" onclick="openChat('${roomId}', '${otherUser}')">
+                              <div class="d-flex align-items-center">
+                                  <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center me-3 shadow-sm" style="width:40px; height:40px;"><i class="fas fa-user"></i></div>
+                                  <div><h6 class="mb-0 fw-bold">${otherUser}</h6><small class="text-muted">Click to open chat</small></div>
+                              </div>
+                          </div>
+                      `;
+                  });
+              });
+        }
+
+        function openChat(roomId, otherUser) {
+            currentChatUser = roomId;
+            document.getElementById('chatHeader').innerHTML = `<i class="fas fa-lock text-success me-2"></i> Secure Chat with <strong>${otherUser}</strong>`;
+            document.getElementById('privateInput').disabled = false;
+            document.getElementById('sendBtn').disabled = false;
+
+            if(unsubscribeMessages) unsubscribeMessages(); 
+
+            unsubscribeMessages = db.collection("private_messages").doc(roomId).collection("messages")
+              .orderBy("timestamp", "asc").onSnapshot(snapshot => {
+                  const box = document.getElementById('privateMessages');
+                  box.innerHTML = '';
+                  snapshot.forEach(doc => {
+                      const msg = doc.data();
+                      const isMe = msg.sender === myEmail;
+                      box.innerHTML += `
+                          <div class="message ${isMe ? 'self' : ''}">
+                              <div class="message-content">${msg.text}</div>
+                          </div>
+                      `;
+                  });
+                  box.scrollTop = box.scrollHeight;
+              });
+        }
+
+        function sendPrivateMessage() {
+            if(!currentChatUser) return;
+            const input = document.getElementById('privateInput');
+            const txt = input.value.trim();
+            if(!txt) return;
+
+            db.collection("private_messages").doc(currentChatUser).collection("messages").add({
+                text: txt, sender: myEmail, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => input.value = '');
+        }
+    </script>
+</body>
+</html>
