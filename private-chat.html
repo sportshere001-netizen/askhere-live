@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Private Inbox - AskHere</title>
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=()">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💡</text></svg>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -35,13 +36,10 @@
 </head>
 <body>
 
-    <!-- Unified Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow">
         <div class="container-fluid px-4">
             <a class="navbar-brand fw-bold fs-4" href="index.html"><i class="fas fa-brain text-info"></i> AskHere</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav mx-auto gap-2">
                     <li class="nav-item"><a class="nav-link fw-semibold" href="index.html"><i class="fas fa-home"></i> Feed</a></li>
@@ -59,7 +57,6 @@
     </nav>
 
     <div class="layout-container">
-        <!-- Sidebar (Inbox & Requests) -->
         <div class="sidebar d-none d-md-flex">
             <div class="p-4 border-bottom bg-secondary-subtle">
                 <h5 class="fw-bold mb-3">Send Request</h5>
@@ -68,40 +65,23 @@
                     <button class="btn btn-primary fw-bold" onclick="sendRequest()">Send</button>
                 </div>
             </div>
-            
             <ul class="nav nav-tabs nav-fill bg-secondary-subtle" id="inboxTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active fw-bold py-3 text-body" data-bs-toggle="tab" data-bs-target="#activeChats">Chats</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link fw-bold py-3 text-body" data-bs-toggle="tab" data-bs-target="#pendingRequests">Requests <span id="reqBadge" class="badge bg-danger ms-1 d-none">!</span></button>
-                </li>
+                <li class="nav-item"><button class="nav-link active fw-bold py-3 text-body" data-bs-toggle="tab" data-bs-target="#activeChats">Chats</button></li>
+                <li class="nav-item"><button class="nav-link fw-bold py-3 text-body" data-bs-toggle="tab" data-bs-target="#pendingRequests">Requests <span id="reqBadge" class="badge bg-danger ms-1 d-none">!</span></button></li>
             </ul>
-            
             <div class="tab-content flex-grow-1 overflow-auto bg-body">
-                <div class="tab-pane fade show active" id="activeChats">
-                    <div class="list-group list-group-flush" id="chatsList">
-                        <div class="p-4 text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Loading Inbox...</div>
-                    </div>
-                </div>
-                <div class="tab-pane fade" id="pendingRequests">
-                    <div class="list-group list-group-flush" id="requestsList">
-                        <div class="p-4 text-center text-muted">No pending requests.</div>
-                    </div>
-                </div>
+                <div class="tab-pane fade show active" id="activeChats"><div class="list-group list-group-flush" id="chatsList"><div class="p-4 text-center text-muted">Loading...</div></div></div>
+                <div class="tab-pane fade" id="pendingRequests"><div class="list-group list-group-flush" id="requestsList"><div class="p-4 text-center text-muted">No requests.</div></div></div>
             </div>
         </div>
 
-        <!-- Chat Area -->
         <div class="chat-area">
             <div class="bg-body p-3 border-bottom shadow-sm">
                 <h5 class="mb-0 fw-bold" id="chatHeader">Select a conversation</h5>
             </div>
-
             <div class="messages" id="privateMessages">
-                <div class="text-center text-muted mt-5"><i class="fas fa-comments fa-3x mb-3 opacity-50"></i><p>Select a user from the left to start chatting securely.</p></div>
+                <div class="text-center text-muted mt-5"><i class="fas fa-comments fa-3x mb-3 opacity-50"></i><p>Select a user to chat securely.</p></div>
             </div>
-
             <div class="chat-input-area">
                 <button class="btn btn-light rounded-circle me-2 border p-2 shadow-sm" onclick="attachPrivateMedia()" id="mediaBtn" disabled><i class="fas fa-paperclip text-success"></i></button>
                 <input type="text" id="privateInput" class="form-control rounded-pill border-0 bg-secondary-subtle px-4 shadow-sm" placeholder="Type a secure message..." onkeypress="if(event.key === 'Enter') sendPrivateMessage()" disabled>
@@ -115,19 +95,14 @@
         let currentChatUser = null;
         let myEmail = null;
         let unsubscribeMessages = null;
+        let lastPrivateMsgTime = 0;
 
         setTimeout(() => {
-            if(!auth.currentUser) {
-                alert("Private messaging requires an account. Redirecting to login...");
-                window.location.href = "login.html";
-                return;
-            }
+            if(!auth.currentUser) { alert("Requires an account."); window.location.href = "login.html"; return; }
             myEmail = auth.currentUser.email;
 
-            const urlParams = new URLSearchParams(window.location.search);
-            const reqTo = urlParams.get('requestTo');
+            const reqTo = new URLSearchParams(window.location.search).get('requestTo');
             if(reqTo && reqTo !== myEmail) { document.getElementById('requestEmailInput').value = reqTo; }
-
             listenToRequests(); listenToActiveChats();
         }, 1500);
 
@@ -148,113 +123,70 @@
 
         function attachPrivateMedia() {
             const link = prompt("Paste Media URL (Image, YouTube, Video, Audio):");
-            if(link) { 
-                document.getElementById('privateInput').value += " " + link; 
-                document.getElementById('privateInput').focus();
-            }
+            if(link) { document.getElementById('privateInput').value += " " + link; document.getElementById('privateInput').focus(); }
         }
 
         function sendRequest() {
             const target = document.getElementById('requestEmailInput').value.trim();
             if(!target || target === myEmail) return;
-
-            db.collection("chat_requests").add({
-                from: myEmail, to: target, status: 'pending', timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => { alert("Request sent to " + target); document.getElementById('requestEmailInput').value = ''; });
+            db.collection("chat_requests").add({ from: myEmail, to: target, status: 'pending', timestamp: firebase.firestore.FieldValue.serverTimestamp() })
+              .then(() => { alert("Request sent!"); document.getElementById('requestEmailInput').value = ''; }).catch(handleFirebaseError);
         }
 
         function listenToRequests() {
-            db.collection("chat_requests").where("to", "==", myEmail).where("status", "==", "pending")
-              .onSnapshot(snapshot => {
-                  const list = document.getElementById('requestsList');
-                  const badge = document.getElementById('reqBadge');
-                  list.innerHTML = '';
-                  
-                  if(snapshot.empty) {
-                      badge.classList.add('d-none');
-                      list.innerHTML = '<div class="p-4 text-center text-muted">No pending requests.</div>';
-                      return;
-                  }
-                  
+            db.collection("chat_requests").where("to", "==", myEmail).where("status", "==", "pending").onSnapshot(snapshot => {
+                  const list = document.getElementById('requestsList'); const badge = document.getElementById('reqBadge'); list.innerHTML = '';
+                  if(snapshot.empty) { badge.classList.add('d-none'); list.innerHTML = '<div class="p-4 text-center text-muted">No pending requests.</div>'; return; }
                   badge.classList.remove('d-none');
                   snapshot.forEach(doc => {
                       const data = doc.data();
-                      list.innerHTML += `
-                          <div class="list-group-item d-flex justify-content-between align-items-center">
-                              <div><small class="fw-bold d-block">${data.from}</small><small class="text-muted">Wants to chat</small></div>
-                              <button class="btn btn-success btn-sm rounded-pill" onclick="acceptRequest('${doc.id}', '${data.from}')">Accept</button>
-                          </div>
-                      `;
+                      list.innerHTML += `<div class="list-group-item d-flex justify-content-between align-items-center"><div><small class="fw-bold d-block">${escapeHTML(data.from)}</small></div><button class="btn btn-success btn-sm rounded-pill" onclick="acceptRequest('${doc.id}', '${escapeHTML(data.from)}')">Accept</button></div>`;
                   });
-              });
+              }, handleFirebaseError);
         }
 
         function acceptRequest(docId, fromUser) {
             db.collection("chat_requests").doc(docId).update({ status: 'accepted' }).then(() => {
-                db.collection("active_chats").add({ users: [myEmail, fromUser] });
-                alert("Request accepted! They are now in your Chats tab.");
-            });
+                db.collection("active_chats").add({ users: [myEmail, fromUser] }); alert("Accepted!");
+            }).catch(handleFirebaseError);
         }
 
         function listenToActiveChats() {
-            db.collection("active_chats").where("users", "array-contains", myEmail)
-              .onSnapshot(snapshot => {
-                  const list = document.getElementById('chatsList');
-                  list.innerHTML = '';
-                  if(snapshot.empty) { list.innerHTML = '<div class="p-4 text-center text-muted">No active chats. Search for an email above to start one!</div>'; return; }
-
+            db.collection("active_chats").where("users", "array-contains", myEmail).onSnapshot(snapshot => {
+                  const list = document.getElementById('chatsList'); list.innerHTML = '';
+                  if(snapshot.empty) { list.innerHTML = '<div class="p-4 text-center text-muted">No active chats.</div>'; return; }
                   snapshot.forEach(doc => {
-                      const users = doc.data().users;
-                      const otherUser = users[0] === myEmail ? users[1] : users[0];
-                      const roomId = users.sort().join('_'); 
-
-                      list.innerHTML += `
-                          <div class="list-group-item" onclick="openChat('${roomId}', '${otherUser}')">
-                              <div class="d-flex align-items-center">
-                                  <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center me-3 shadow-sm" style="width:40px; height:40px;"><i class="fas fa-user"></i></div>
-                                  <div><h6 class="mb-0 fw-bold">${otherUser}</h6><small class="text-muted">Click to open chat</small></div>
-                              </div>
-                          </div>
-                      `;
+                      const users = doc.data().users; const otherUser = users[0] === myEmail ? users[1] : users[0]; const roomId = users.sort().join('_'); 
+                      list.innerHTML += `<div class="list-group-item" onclick="openChat('${roomId}', '${escapeHTML(otherUser)}')"><div class="d-flex align-items-center"><div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center me-3 shadow-sm" style="width:40px; height:40px;"><i class="fas fa-user"></i></div><div><h6 class="mb-0 fw-bold">${escapeHTML(otherUser)}</h6></div></div></div>`;
                   });
-              });
+              }, handleFirebaseError);
         }
 
         function openChat(roomId, otherUser) {
             currentChatUser = roomId;
             document.getElementById('chatHeader').innerHTML = `<i class="fas fa-lock text-success me-2"></i> Secure Chat with <strong>${otherUser}</strong>`;
-            document.getElementById('privateInput').disabled = false;
-            document.getElementById('sendBtn').disabled = false;
-            document.getElementById('mediaBtn').disabled = false;
+            document.getElementById('privateInput').disabled = false; document.getElementById('sendBtn').disabled = false; document.getElementById('mediaBtn').disabled = false;
 
             if(unsubscribeMessages) unsubscribeMessages(); 
-
-            unsubscribeMessages = db.collection("private_messages").doc(roomId).collection("messages")
-              .orderBy("timestamp", "asc").onSnapshot(snapshot => {
-                  const box = document.getElementById('privateMessages');
-                  box.innerHTML = '';
+            unsubscribeMessages = db.collection("private_messages").doc(roomId).collection("messages").orderBy("timestamp", "asc").limitToLast(50).onSnapshot(snapshot => {
+                  const box = document.getElementById('privateMessages'); box.innerHTML = '';
                   snapshot.forEach(doc => {
-                      const msg = doc.data();
-                      const isMe = msg.sender === myEmail;
-                      box.innerHTML += `
-                          <div class="message ${isMe ? 'self' : ''}">
-                              <div class="message-content">${formatMedia(msg.text)}</div>
-                          </div>
-                      `;
+                      const msg = doc.data(); const isMe = msg.sender === myEmail;
+                      box.innerHTML += `<div class="message ${isMe ? 'self' : ''}"><div class="message-content">${formatMedia(escapeHTML(msg.text))}</div></div>`;
                   });
                   box.scrollTop = box.scrollHeight;
-              });
+              }, handleFirebaseError);
         }
 
         function sendPrivateMessage() {
             if(!currentChatUser) return;
-            const input = document.getElementById('privateInput');
-            const txt = input.value.trim();
-            if(!txt) return;
+            if (Date.now() - lastPrivateMsgTime < 3000) { alert("Spam protection. Please wait."); return; }
+            const input = document.getElementById('privateInput'); const txt = input.value.trim(); if(!txt) return;
 
+            lastPrivateMsgTime = Date.now();
             db.collection("private_messages").doc(currentChatUser).collection("messages").add({
                 text: txt, sender: myEmail, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => { input.value = ''; input.focus(); });
+            }).then(() => { input.value = ''; input.focus(); }).catch(handleFirebaseError);
         }
     </script>
 </body>
